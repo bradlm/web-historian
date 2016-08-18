@@ -29,28 +29,26 @@ exports.readListOfUrls = readListOfUrls = cb => {
 
 exports.isUrlInList = (url, cb) => {
   readListOfUrls(sites => {
-    cb((() => {
-      for (let i = 0; i < sites.length; i++) {
-        if (sites[i].indexOf(url) > -1) {
-          return true;
-        }
+    for (let i = 0; i < sites.length; i++) {
+      if (sites[i].indexOf(url) > -1) {
+        return cb(true);
       }
-      return false;
-    })());
+    }
+    cb(false);
   });
 };
 
 //adds a url to the list. optional callback executed after.
-exports.addUrlToList = addUrlToList = (siteName, cb) => {
-  fs.appendFile(paths.list, siteName + '\n', () => {
-    cb ? cb() : null; 
+exports.addUrlToList = addUrlToList = (url, cb) => {
+  fs.appendFile(paths.list, url + '\n', () => {
+    cb && cb(); 
   });
 };
 
 //check if url is archived. passes bool to a cb
 exports.isUrlArchived = isUrlArchived = (url, cb) => {
-  read(paths.archivedSites, url, err => {
-    cb(!Boolean(err));
+  read(paths.archivedSites, url, (err, data) => {
+    cb(Boolean(data));
   });
 };
 
@@ -77,6 +75,6 @@ exports.downloadUrls = cb => {
         }
       });
     });
-    cb ? cb() : null; //optional callback
+    cb && cb(); //optional callback
   });
 };

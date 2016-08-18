@@ -19,7 +19,7 @@ var actionMap = {
               utils.redir(res, '/' + siteName) 
               : utils.redir(res, '/loading.html');
           })
-          : archive.addUrlToList(siteName, () =>{
+          : archive.addUrlToList(siteName, () => {
             utils.redir(res, '/loading.html');
             //need something to escape loading state once page is fetched
           });
