@@ -1,31 +1,41 @@
 var path = require('path');
 var archive = require('../helpers/archive-helpers');
+var utils = require('./http-helpers');
 var url = require('url');
-var fs = require('fs');
-var util = require('./http-helpers.js');
-// require more modules/folders here!
 
-exports.handleRequest = function (req, res) {
-  if (req.method === 'GET') {
-    if (req.url === '/') {
-      util.serveClient(res);
-    } else {
-      util.serveAssets(res, req.url, function(err, data) {
-        if (err) {
-          console.log('error: ', err);
+var actionMap = {
+  GET: (req, res) => {
+    let reqUrl = url.parse(req.url);
+    let endPoint = reqUrl.pathname === '/' ? '/index.html' : reqUrl.pathname;
+    utils.assetSrv(res, endPoint);
+  },
+  POST: (req, res) => {
+    utils.resPrep(req, data => {
+      // TODO: handle http(s):// cases
+      let siteName = data.split('=')[1];
+      archive.isUrlInList(siteName, urlFound => {
+        if (urlFound) {
+          archive.isURLArchived(siteName, urlArchived => {
+            if (urlArchived) {
+              utils.redirect(res, '/' + siteName);
+            } else {
+              utils.redirect(res, '/loading.html');
+            }
+          });
         } else {
-          res.writeHead(200, exports.headers);
-          res.end(data);
+          archive.addUrlToList(siteName, () =>{
+            utils.redirect(res, '/loading.html');
+          });
         }
       });
-    }
-  } else if (req.method === 'OPTIONS') {
-    util.sendResponse(res, null);
-  } else if (req.method === 'POST') {
-
-  } else {
-    util.sendResponse(res, null, 404);
+    });
+  },
+  OPTIONS: (req, res) => {
+    utils.resSend(res);
   }
+};
 
-  //res.end(archive.paths.list);
+exports.handleRequest = (req, res) => {
+  var action = actionMap[req.method];
+  action ? action(req, res) : utils.errSend(res, 'Bad Request', 400);
 };

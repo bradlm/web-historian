@@ -2,65 +2,52 @@ var path = require('path');
 var fs = require('fs');
 var archive = require('../helpers/archive-helpers');
 
-exports.headers = {
+exports.headers = headers = {
   'access-control-allow-origin': '*',
   'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'access-control-allow-headers': 'content-type, accept',
-  'access-control-max-age': 10, // Seconds.
+  'access-control-max-age': 10,
   'Content-Type': 'text/html'
 };
 
-exports.serveClient = function(res) {
-  var dataFile = '';
-  fs.readFile(__dirname + '/public/index.html', 'utf8', function(err, data) {
-
-    if (err) {
-      console.log('error: ', err);
-    } else {
-      res.writeHead(200, exports.headers);
-      res.end(data);
-    }
-  });
-};
-
-exports.sendResponse = function(res, data, statusCode) {
-  statusCode = statusCode || 200;
-  res.writeHead(statusCode, exports.headers);
+exports.resSend = resSend = (res, data = null, status = 200) => {
+  res.writeHead(status, headers);
   res.end(data);
 };
 
-exports.serveAssets = function(res, asset, callback) {
-  // Write some code here that helps serve up your static files!
-  // (Static files are things like html (yours or archived from others...),
-  // css, or anything that doesn't change often.)
+exports.resPrep = (req, cb) => {
+  var data = '';
+  req.on('data', chunk => { 
+    data += chunk; 
+  });
+  req.on('end', () => { 
+    cb(data); 
+  });
+};
 
-  var dataFile = '';
-  var filePath = '';
-  // if (asset === '/') {
-  //   filePath = __dirname + '/public/index.html';
-  // } else {
-  filePath = archive.paths.list;
-  //}
-  //makes it here.
-  fs.readFile(filePath, 'utf8', function(err, data) {
-    //not making it here :(
+exports.errSend = errSend = (res, text = 'Not Found', status = 404) => {
+  exports.resSend(res, text, status);
+};
+
+exports.assetSrv = (res, asset) => {
+  let paths = archive.paths;
+  let search = archive.search;
+  search(paths.siteAssets, asset, (err, data) => { //no public asset
     if (err) {
-      console.log('error: ', err);
-    } else {
-      data = data.split('\n');
-
-      if (data.indexOf(asset.slice(1, asset.length)) === -1) {
-        console.log('got here');
-        fs.writeFileSync(filePath);
-        fs.read(filePath, function(err, data) {
-          console.log(data, 'inside read');
-        });
-        // fs.readFile(path.join(archive.paths.archivedSites, asset), 'utf8', callback);
-      }
+      search(paths.archivedSites, asset, (err, data) => { //no archive asset
+        if (err) {
+          errSend(res); 
+        } else { 
+          resSend(res, data); 
+        }
+      });
+    } else { 
+      resSend(res, data); 
     }
   });
 };
 
-
-
-// As you progress, keep thinking about what helper functions you can put here!
+exports.redirect = (res, loc, status = 302) => {
+  res.writeHead(status, { Location: loc });
+  res.end();
+};
