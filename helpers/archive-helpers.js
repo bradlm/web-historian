@@ -47,34 +47,24 @@ exports.addUrlToList = addUrlToList = (url, cb) => {
 
 //check if url is archived. passes bool to a cb
 exports.isUrlArchived = isUrlArchived = (url, cb) => {
-  read(paths.archivedSites, url, (err, data) => {
-    cb(Boolean(data));
+  read(paths.archivedSites, url, err => {
+    cb(!err);
   });
 };
 
-exports.downloadUrls = cb => {
-  readListOfUrls(siteNames => {
-    siteNames.forEach(site => {
-      isUrlArchived(site, archived => {
-        if (!archived) {
-          http.get(site, res => {
-//example html get:
-// http.get('http://www.google.com/index.html', (res) => {
-//   console.log(`Got response: ${res.statusCode}`);
-//   // consume response body
-//   res.resume();
-// }).on('error', (e) => {
-//   console.log(`Got error: ${e.message}`);
-// });
-
-//need to write html to new file in sites
-//do we need to remove archived sites from the list? would require refactor but might be less complex.
-          }).on('error', err => {
-            console.log(err.message);
+exports.downloadUrls = (siteArr, cb) => {
+  siteArr.forEach(site => { 
+    isUrlArchived(site, archived => { //check if file exists
+      if (!archived) {
+        console.log(site); //LOGGING SITE TO CONSOLE
+        http.get('http://' + site, res => { //NOT YET WORKING 
+          res.on('data', chunk => {
+            cb(site, chunk.toString());
           });
-        }
-      });
+        }).on('error', err => {
+          console.log('Error:' + err.message);
+        });
+      }
     });
-    cb && cb(); //optional callback
   });
 };

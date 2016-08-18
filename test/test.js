@@ -5,6 +5,7 @@ var archive = require('../helpers/archive-helpers');
 var path = require('path');
 var supertest = require('supertest');
 var initialize = require('../web/initialize.js');
+var fetcher = require('../workers/htmlfetcher.js');
 
 initialize(path.join(__dirname, '/testdata'));
 
@@ -145,7 +146,7 @@ describe('archive helpers', function() {
   describe('#downloadUrls', function () {
     it('should download all pending urls in the list', function (done) {
       var urlArray = ['www.example.com', 'www.google.com'];
-      archive.downloadUrls(urlArray);
+      archive.downloadUrls(urlArray, fetcher.writeToArchive);
 
       // Ugly hack to wait for all downloads to finish.
       setTimeout(function () {
