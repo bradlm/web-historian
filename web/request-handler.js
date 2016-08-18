@@ -11,22 +11,18 @@ var actionMap = {
   },
   POST: (req, res) => {
     utils.resPrep(req, data => {
-      // TODO: handle http(s):// cases
-      let siteName = data.split('=')[1];
-      archive.isUrlInList(siteName, urlFound => {
-        if (urlFound) {
-          archive.isURLArchived(siteName, urlArchived => {
-            if (urlArchived) {
-              utils.redirect(res, '/' + siteName);
-            } else {
-              utils.redirect(res, '/loading.html');
-            }
+      let siteName = data.split('=')[1];//extract url
+      archive.isUrlInList(siteName, urlInList => {
+        urlInList ? //is url in site list?
+          archive.isURLArchived(siteName, urlInArchive => {
+            urlInArchive ? //is listed url in archive?
+              utils.redir(res, '/' + siteName) 
+              : utils.redir(res, '/loading.html');
+          })
+          : archive.addUrlToList(siteName, () =>{
+            utils.redir(res, '/loading.html');
+            //need something to escape loading state once page is fetched
           });
-        } else {
-          archive.addUrlToList(siteName, () =>{
-            utils.redirect(res, '/loading.html');
-          });
-        }
       });
     });
   },

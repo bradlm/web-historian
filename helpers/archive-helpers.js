@@ -3,18 +3,10 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
 
-/*
- * You will need to reuse the same paths many times over in the course of this sprint.
- * Consider using the `paths` object below to store frequently used file paths. This way,
- * if you move any files, you'll only need to change your code in one place! Feel free to
- * customize it in any way you wish.
- */
-
 exports.paths = paths = {
   siteAssets: path.join(__dirname, '../web/public'),
   archivedSites: path.join(__dirname, '../archives/sites'),
-  list: path.join(__dirname, '../archives/sites.txt'),
-  logs: path.join(__dirname, '../workers/logs')
+  list: path.join(__dirname, '../archives/sites.txt')
 };
 
 // Used for stubbing paths for tests, do not modify
@@ -24,21 +16,22 @@ exports.initialize = function(pathsObj) {
   });
 };
 
-// The following function names are provided to you to suggest how you might
-// modularize your code. Keep it clean!
+//read asset at a given location and process in callback
+exports.read = read = (folder, asset, cb) => {
+  fs.readFile(folder + '/' + asset, 'utf8', cb);
+};
 
-exports.readListOfUrls = cb => {
-  fs.readFile(paths.list, (err, sites) => {
-    sites = sites.toString().split('\n');
-    cb(sites);
+exports.readListOfUrls = readListOfUrls = cb => {
+  fs.readFile(paths.list, (err, data) => { //data = listed sites
+    cb(data.toString().split('\n'));
   });
 };
 
-exports.isUrlInList = (endPoint, cb) => {
-  exports.readListOfUrls(sites => {
+exports.isUrlInList = (url, cb) => {
+  readListOfUrls(sites => {
     cb((() => {
       for (let i = 0; i < sites.length; i++) {
-        if (sites[i].indexOf(endPoint) > -1) {
+        if (sites[i].indexOf(url) > -1) {
           return true;
         }
       }
@@ -47,34 +40,43 @@ exports.isUrlInList = (endPoint, cb) => {
   });
 };
 
-exports.search = search = (folder, asset, cb) => {
-  fs.readFile(folder + '/' + asset, 'utf8', cb);
-};
-
-exports.addUrlToList = (siteName, cb) => {
+//adds a url to the list. optional callback executed after.
+exports.addUrlToList = addUrlToList = (siteName, cb) => {
   fs.appendFile(paths.list, siteName + '\n', () => {
     cb ? cb() : null; 
   });
 };
 
-exports.isUrlArchived = (url, cb) => {
-  search(paths.archivedSites, url, founnd => {
-    cb ? cb(found) : null;
+//check if url is archived. passes bool to a cb
+exports.isUrlArchived = isUrlArchived = (url, cb) => {
+  read(paths.archivedSites, url, err => {
+    cb(!Boolean(err));
   });
 };
 
 exports.downloadUrls = cb => {
-  exports.readListOfUrls(siteNames => {
-    _.each(siteNames, site=> {
-      http.get(site, res => {
-        // html = res.body
-        //write html to new file in sites/ with filename matching url
-        // remove site from sites.txt list
-      }).on('error', err => {
-        fs.appendFile(paths.logs, err.message);
-        exports.addUrlToList(site);
+  readListOfUrls(siteNames => {
+    siteNames.forEach(site => {
+      isUrlArchived(site, archived => {
+        if (!archived) {
+          http.get(site, res => {
+//example html get:
+// http.get('http://www.google.com/index.html', (res) => {
+//   console.log(`Got response: ${res.statusCode}`);
+//   // consume response body
+//   res.resume();
+// }).on('error', (e) => {
+//   console.log(`Got error: ${e.message}`);
+// });
+
+//need to write html to new file in sites
+//do we need to remove archived sites from the list? would require refactor but might be less complex.
+          }).on('error', err => {
+            console.log(err.message);
+          });
+        }
       });
     });
-    cb ? cb() : null;
+    cb ? cb() : null; //optional callback
   });
 };

@@ -10,11 +10,13 @@ exports.headers = headers = {
   'Content-Type': 'text/html'
 };
 
+//sends response with optional data
 exports.resSend = resSend = (res, data = null, status = 200) => {
   res.writeHead(status, headers);
   res.end(data);
 };
 
+//modifies response data when needed
 exports.resPrep = (req, cb) => {
   var data = '';
   req.on('data', chunk => { 
@@ -25,29 +27,26 @@ exports.resPrep = (req, cb) => {
   });
 };
 
+//error handler
 exports.errSend = errSend = (res, text = 'Not Found', status = 404) => {
-  exports.resSend(res, text, status);
+  resSend(res, text, status);
 };
 
+//serves assets if available
 exports.assetSrv = (res, asset) => {
   let paths = archive.paths;
-  let search = archive.search;
-  search(paths.siteAssets, asset, (err, data) => { //no public asset
-    if (err) {
-      search(paths.archivedSites, asset, (err, data) => { //no archive asset
-        if (err) {
-          errSend(res); 
-        } else { 
-          resSend(res, data); 
-        }
-      });
-    } else { 
-      resSend(res, data); 
-    }
+  let read = archive.read;
+  read(paths.siteAssets, asset, (err, data) => { //check for public asset (index)
+    err ? //if not public check for archive
+      read(paths.archivedSites, asset, (err, data) => { //check for archive asset
+        err ? errSend(res) : resSend(res, data); 
+      })
+    : resSend(res, data);
   });
 };
 
-exports.redirect = (res, loc, status = 302) => {
+//redirects
+exports.redir = (res, loc, status = 302) => {
   res.writeHead(status, { Location: loc });
   res.end();
 };
