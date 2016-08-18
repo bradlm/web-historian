@@ -1,3 +1,13 @@
+/*
+---------------------------------------------------
+Things to do:
+
+site.txt:
+  1) marker to indicate what moved to sites folder
+  2) url
+  3) file reference
+---------------------------------------------------
+*/
 var fs = require('fs');
 
 // Sync is ok here because this is called just once on startup.

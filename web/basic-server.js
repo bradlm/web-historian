@@ -6,7 +6,7 @@ var initialize = require('./initialize.js');
 // HINT: It has to do with what's in .gitignore
 initialize('./archives');
 
-var port = 8080;
+var port = 1337;
 var ip = '127.0.0.1';
 var server = http.createServer(handler.handleRequest);
 
@@ -16,4 +16,3 @@ if (module.parent) {
   server.listen(port, ip);
   console.log('Listening on http://' + ip + ':' + port);
 }
-
